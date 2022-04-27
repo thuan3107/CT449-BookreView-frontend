@@ -1,0 +1,175 @@
+<template>
+    <div class="list row">
+        
+        <div class="col-md-12">
+            <div class="mb-3 input-group">
+                <input 
+                    type="text"
+                    class="form-control"
+                    placeholder="Search by name..."
+                    v-model="nameToSearch"/>
+                <div class="input-group-append">
+                    <button 
+                        class="btn btn-outline-secondary"
+                        type="button"
+                        @click="searchName"
+                    >
+                        Search
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <h4 style="color: #10bded; font-family: 'Acme' ">Bookstore</h4>
+            <ul class="list-group">
+                <li
+                    class="list-group-item"
+                    :class="{ active: index == currentIndex }"
+                    v-for="(reviewer, index) in reviewers"
+                    :key="reviewer.id"
+                    @click="setActiveReviewer(reviewer, index)"    
+                >
+                    <span style="color: #756262">{{ reviewer.name }}</span>
+                </li>
+            </ul>
+
+            <button class="btn-button" @click="goToAddReviewer">
+                ADD
+            </button>
+
+            <button class="btn-button" @click="removeAllReviewers">
+                DELETE ALL 
+            </button>
+        </div>
+        <div class="col-md-8">
+            <div v-if="currentReviewer">
+                <ReviewerDetails 
+                    :reviewer="currentReviewer"
+                />
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+import ReviewerDetails from "../components/ReviewerDetails";
+import ReviewerService from "../services/reviewer.service";
+
+
+export default {
+    name: "ReviewerHome",
+    components: {
+        ReviewerDetails,
+    },
+    data() {
+        return {
+            reviewers: [],
+            currentReviewer: null,
+            currentIndex: -1,
+            nameToSearch: "",
+        };
+    },
+    methods: {
+        setActiveReviewer(reviewer, index) {
+            this.currentReviewer = reviewer;
+            this.currentIndex = reviewer ? index : -1;
+        },
+
+        async retrieveReviewers() {
+            const [error, response] = await this.handle(
+                ReviewerService.getAll()
+            );
+            if (error) {
+                console.log(error);
+            } else {
+                this.reviewers = response.data;
+                console.log(response.data);
+            }
+        },
+        
+        refreshList() {
+            this.retriveReviewers();
+            this.currentReviewer = null;
+            this.currentIndex = -1;
+        },
+
+        async removeAllReviewers() {
+            const [error, response] = await this.handle(
+                ReviewerService.deleteAll()
+            );
+            if (error){
+                console.log(error);
+            } else {
+                console.log(response.data);
+                this.refreshList();
+            }
+        },
+        goToAddReviewer() {
+            this.$router.push("/addreviewer");
+        },
+        async searchName() {
+            const [error, response] = await this.handle(
+                ReviewerService.findByName(this.nameToSearch)
+            );
+            if(error){
+                console.log(error);
+            } else {
+                this.reviewers = response.data;
+                this.setActiveReviewer(null);
+                console.log(response.data);
+            }
+        },
+        
+    }, 
+    mounted() {
+        this.retrieveReviewers();
+    },   
+};
+</script>
+
+<style>
+.list {
+    text-align: left;
+    max-width: 900px;
+    margin: auto;
+}
+.list-group-item.active {
+  z-index: 2;
+  color: #fff;
+  background-color: #76575727;
+  border-color: #968080ab;
+}
+.list-group-item:hover {
+  color: #fff;
+  background-color: #76575727;
+}
+.btn:hover {
+    color: #756262;
+    background-color: #76575727;
+    border-color: #968080ab;
+}
+.form-control:focus {
+  color: #495057;
+  background-color: #fff;
+  border-color: #968080ab;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(94, 74, 44, 0.315);
+  font-family: 'Acme';
+}
+.btn-button {
+    border-radius: 30px;
+    border: 2px solid #080808;
+    background-color: #eaea70;
+    color: #000000;
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: transform 50ms ease-in;
+    margin-top: 25px;
+    margin-left: 5px;
+    font-family: 'Acme';
+}
+.input-group-append {
+    font-family: 'Acme';
+}
+</style>
